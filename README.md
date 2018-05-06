@@ -7,8 +7,11 @@ This project takes the PR history of a github project and outputs a markdown
 file that describes the PR history of a given branch.
 
 The usecase this is primarily meant to solve is to allow the main PR comment
-history to be brought in to the github project and rendered into a changelog
-of what has gone in to the
+history to be brought in to the github project and rendered into a markdown
+format changelog of what has gone into each branch. 
+
+This can be used as a tool to minimize the manual work needed in a CI/CD workflow
+for everyone to keep track of what is in the develop & master branches.
 
 
 1. Bring data from github api for PR mergers into git history (in a datastructure).
