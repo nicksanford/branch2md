@@ -10,11 +10,11 @@ use Mix.Config
 
 # You can configure your application as:
 #
-#     config :gitlog, key: :value
+#     config :branch2md, key: :value
 #
 # and access this configuration in your application as:
 #
-#     Application.get_env(:gitlog, :key)
+#     Application.get_env(:branch2md, :key)
 #
 # You can also configure a 3rd-party app:
 #
@@ -28,5 +28,10 @@ use Mix.Config
 # here (which is why it is important to import them last).
 #
 #     import_config "#{Mix.env}.exs"
-config :logger,
-  truncate: :infinity
+config :logger, truncate: :infinity
+
+config :branch2md,
+  cache_dir: "branch2md",
+  github_api_url: 'https://api.github.com',
+  github_clone_url: "git@github.com",
+  github_url: "https://github.com"

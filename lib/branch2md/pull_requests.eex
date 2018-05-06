@@ -1,0 +1,11 @@
+# [<%= String.capitalize(struct.project) %>](<%= Branch2Md.PullRequest.github_repo_url(struct) %>)
+
+## Branch Timeline:
+
+### <%= struct.branch %>
+
+<%= for pr <- prs do %>
+#### [#<%= pr.number %>] - (<%= pr.merged_at %>) - [<%= pr.title %>](<%= Branch2Md.PullRequest.pull_request_url(pr, struct) %>)
+
+<%= pr.body %>
+<% end %>
