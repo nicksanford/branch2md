@@ -9,12 +9,11 @@ defmodule Gitlog.MixProject do
       elixir: "~> 1.6",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      dialyzer: [ plt_add_deps: :transitive,
-                  plt_add_apps: [:inets],
-                  flags: ["-Wunmatched_returns",
-                          :error_handling,
-                          :race_conditions,
-                          :underspecs] ]
+      dialyzer: [
+        plt_add_deps: :transitive,
+        plt_add_apps: [:inets],
+        flags: ["-Wunmatched_returns", :error_handling, :race_conditions, :underspecs]
+      ]
     ]
   end
 

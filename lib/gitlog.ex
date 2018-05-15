@@ -15,33 +15,37 @@ defmodule Gitlog do
   # to use hackney
   @httpc_options [{:timeout, 5000}, {:connect_timeout, 5000}]
 
-  @type gitlog_struct :: %Gitlog{user: String.t,
-                    project: String.t,
-                    auth: nil | String.t,
-                    cache: boolean()}
+  @type gitlog_struct :: %Gitlog{
+          user: String.t(),
+          project: String.t(),
+          auth: nil | String.t(),
+          cache: boolean()
+        }
 
-
-  @type pull_request :: %{number: integer(),
-                          body: String.t,
-                          merge_commit_sha: String.t,
-                          head_ref: String.t,
-                          head_sha: String.t,
-                          base_ref: String.t,
-                          base_sha: String.t,
-                          merged_at: String.t}
+  @type pull_request :: %{
+          number: integer(),
+          body: String.t(),
+          merge_commit_sha: String.t(),
+          head_ref: String.t(),
+          head_sha: String.t(),
+          base_ref: String.t(),
+          base_sha: String.t(),
+          merged_at: String.t()
+        }
 
   defstruct [:user, :project, :auth, :cache]
 
-  EEx.function_from_file(:def,
-                         :render_pull_requests,
-                         "pull_requests.eex",
-                         [:struct, :prs, :branch])
-
-
+  EEx.function_from_file(:def, :render_pull_requests, "pull_requests.eex", [
+    :struct,
+    :prs,
+    :branch
+  ])
 
   @spec pr_url(gitlog_struct, integer(), integer()) :: String.t()
   def pr_url(%Gitlog{user: user, project: project}, number, per_page \\ 100) do
-    "#{@github_api_url}/repos/#{user}/#{project}/pulls?state=closed&page=#{number}&per_page=#{per_page}"
+    "#{@github_api_url}/repos/#{user}/#{project}/pulls?state=closed&page=#{number}&per_page=#{
+      per_page
+    }"
   end
 
   @spec github_repo_url(gitlog_struct) :: String.t()
@@ -60,10 +64,10 @@ defmodule Gitlog do
   end
 
   # TODO This could be optimized by chunking parallelized chunks (may result
-   # in rate limiting)
+  # in rate limiting)
   @spec collect_pull_requests(gitlog_struct) :: Stream.default()
   def collect_pull_requests(struct) do
-    Stream.unfold(1, &(download_pull_requests(struct, &1)))
+    Stream.unfold(1, &download_pull_requests(struct, &1))
   end
 
   @spec get_and_filter_prs(gitlog_struct, :in | :out | :all) :: [pull_request]
@@ -72,19 +76,22 @@ defmodule Gitlog do
     git_shas = get_git_shas(struct)
     _ = remove_project(struct)
 
-    f = case filter_by do
-      :in ->
-        fn (%{base_sha: base_sha}) -> base_sha in git_shas end
-      :out ->
-        fn (%{base_sha: base_sha}) -> base_sha not in git_shas end
-      _ ->
-        fn (x) -> x end
-    end
+    f =
+      case filter_by do
+        :in ->
+          fn %{base_sha: base_sha} -> base_sha in git_shas end
+
+        :out ->
+          fn %{base_sha: base_sha} -> base_sha not in git_shas end
+
+        _ ->
+          fn x -> x end
+      end
 
     struct
     |> collect_pull_requests()
     |> process_pull_request_stream()
-    |> Enum.filter(&(&1.merged_at))
+    |> Enum.filter(& &1.merged_at)
     |> Enum.filter(f)
   end
 
@@ -95,21 +102,23 @@ defmodule Gitlog do
     |> File.exists?()
   end
 
-  @spec cache_pr_data(gitlog_struct) :: String.t
+  @spec cache_pr_data(gitlog_struct) :: String.t()
   def cache_pr_data(struct) do
     _ = File.mkdir(@cache_dir)
 
-    data = collect_pull_requests(struct)
-            |> Enum.to_list()
-            |> Jason.encode!()
+    data =
+      collect_pull_requests(struct)
+      |> Enum.to_list()
+      |> Jason.encode!()
 
-    :ok = cache_path(struct)
-          |> File.write!(data)
+    :ok =
+      cache_path(struct)
+      |> File.write!(data)
 
     data
   end
 
-  @spec load_pr_cache(gitlog_struct) :: String.t
+  @spec load_pr_cache(gitlog_struct) :: String.t()
   def load_pr_cache(struct) do
     struct
     |> cache_path()
@@ -117,23 +126,24 @@ defmodule Gitlog do
   end
 
   # TODO Cache always, only use it if the flag is present, test this out
-  @spec load_pr_data(gitlog_struct) :: String.t
+  @spec load_pr_data(gitlog_struct) :: String.t()
   def load_pr_data(struct = %Gitlog{cache: cache}) do
     case {cached?(struct), cache} do
       {true, true} ->
         load_pr_cache(struct)
+
       _ ->
         cache_pr_data(struct)
     end
   end
 
-  #TODO consider having a full report be rendered including:
-  #1. The prs that were able to be tied back to the branch
-  #2. The prs that were not able to be tied back to the branch
-  #3. An index to see each of them
-  #4. A static site generator to create the site as a whole
-  #5. Maybe a page for each branch in the config file (with an option to do it for each branch in the repo now)?
-  @spec pull_url(pull_request, gitlog_struct) :: String.t
+  # TODO consider having a full report be rendered including:
+  # 1. The prs that were able to be tied back to the branch
+  # 2. The prs that were not able to be tied back to the branch
+  # 3. An index to see each of them
+  # 4. A static site generator to create the site as a whole
+  # 5. Maybe a page for each branch in the config file (with an option to do it for each branch in the repo now)?
+  @spec pull_url(pull_request, gitlog_struct) :: String.t()
   def pull_url(%{number: number}, %Gitlog{user: user, project: project}) do
     "#{@github_url}/#{user}/#{project}/pull/#{number}"
   end
@@ -145,22 +155,22 @@ defmodule Gitlog do
     |> Enum.map(&parse_pull_request/1)
   end
 
-  @spec clone_project(gitlog_struct, String.t) :: {String.t, integer}
+  @spec clone_project(gitlog_struct, String.t()) :: {String.t(), integer}
   def clone_project(struct, clone_dir \\ @clone_dir) do
-    #url = "#{@github_url}/#{user}/#{project}.git"
-  # TODO Consider changing this to use ssh
+    # url = "#{@github_url}/#{user}/#{project}.git"
+    # TODO Consider changing this to use ssh
     url = github_repo_url(struct)
     {_clone_output, 0} = System.cmd("git", ["clone", url], cd: clone_dir)
   end
 
-  @spec remove_project(gitlog_struct) :: [String.t]
+  @spec remove_project(gitlog_struct) :: [String.t()]
   def remove_project(struct) do
     struct
     |> clone_project_path()
     |> File.rm_rf!()
   end
 
-  @spec get_git_shas(gitlog_struct) :: [String.t]
+  @spec get_git_shas(gitlog_struct) :: [String.t()]
   def get_git_shas(struct) do
     path = clone_project_path(struct)
     {git_shas, 0} = System.cmd("git", ["log", "--format='%H'"], cd: path)
@@ -170,7 +180,6 @@ defmodule Gitlog do
     |> String.split("\n")
     |> Enum.reject(&(&1 == ""))
   end
-
 
   @spec check_url(gitlog_struct) :: :ok | :error
   def check_url(struct) do
@@ -186,12 +195,13 @@ defmodule Gitlog do
 
   @spec maybe_add_auth_headers(gitlog_struct) :: [{charlist(), charlist()}]
   defp maybe_add_auth_headers(%Gitlog{auth: nil}), do: @default_headers
+
   defp maybe_add_auth_headers(%Gitlog{auth: auth}) do
-    auth_header = {'Authorization',  'Basic #{:base64.encode(auth)}'}
+    auth_header = {'Authorization', 'Basic #{:base64.encode(auth)}'}
     [auth_header | @default_headers]
   end
 
-  @spec download_pull_requests(gitlog_struct, integer()) :: nil | {String.t, integer()}
+  @spec download_pull_requests(gitlog_struct, integer()) :: nil | {String.t(), integer()}
   defp download_pull_requests(struct, number) do
     httpc_request = {'#{pr_url(struct, number)}', maybe_add_auth_headers(struct)}
 
@@ -201,11 +211,13 @@ defmodule Gitlog do
       {:ok, {{_, 200, _}, _, body}} ->
         case Jason.decode!(body) do
           [] -> nil
-          json_body -> {json_body, number+1}
+          json_body -> {json_body, number + 1}
         end
+
       {:ok, {{_, 404, _}, _, _}} ->
         IO.puts(:stderr, IO.ANSI.format([:red, "ERROR: 404 not found"], true))
         nil
+
       _ ->
         IO.puts(:stderr, IO.ANSI.format([:red, "ERROR: Invalid url"], true))
         nil
@@ -213,53 +225,56 @@ defmodule Gitlog do
   end
 
   @spec parse_pull_request(%{}) :: pull_request
-  defp parse_pull_request(%{"number" => number,
-                           "body" => body,
-                           "merge_commit_sha" => merge_commit_sha,
-                           "merged_at" => merged_at,
-                           "head" => %{"ref" => head_ref, "sha" => head_sha},
-                           "base" => %{"ref" => base_ref, "sha" => base_sha}}) do
-    %{number: number,
-     body: body,
-     merge_commit_sha: merge_commit_sha,
-     head_ref: head_ref,
-     head_sha: head_sha,
-     base_ref: base_ref,
-     base_sha: base_sha,
-     merged_at: merged_at}
+  defp parse_pull_request(%{
+         "number" => number,
+         "body" => body,
+         "merge_commit_sha" => merge_commit_sha,
+         "merged_at" => merged_at,
+         "head" => %{"ref" => head_ref, "sha" => head_sha},
+         "base" => %{"ref" => base_ref, "sha" => base_sha}
+       }) do
+    %{
+      number: number,
+      body: body,
+      merge_commit_sha: merge_commit_sha,
+      head_ref: head_ref,
+      head_sha: head_sha,
+      base_ref: base_ref,
+      base_sha: base_sha,
+      merged_at: merged_at
+    }
   end
 
-# def load_merged_pr_data() do
-#   file = "full_elixir_lang_pull_data.json"
+  # def load_merged_pr_data() do
+  #   file = "full_elixir_lang_pull_data.json"
 
-#   file
-#   |> File.read!()
-#   |> Jason.decode!()
-#   |> Enum.map(&load_pull_requests/1)
-#   |> Enum.filter(&(&1.merged_at))
-#   # base_sha
-#   # head_sha
-#   # merge_commit_sha
-# end
-#
-# defp load_pull_requests(%{"number" => number,
-#                          "body" => body,
-#                          "merge_commit_sha" => merge_commit_sha,
-#                          "head_ref" => head_ref,
-#                          "head_sha" => head_sha,
-#                          "base_ref" => base_ref,
-#                          "base_sha" => base_sha,
-#                          "merged_at" => merged_at}) do
-#   %{number: number,
-#    body: body,
-#    merge_commit_sha: merge_commit_sha,
-#    head_ref: head_ref,
-#    head_sha: head_sha,
-#    base_ref: base_ref,
-#    base_sha: base_sha,
-#    merged_at: merged_at}
-# end
-
+  #   file
+  #   |> File.read!()
+  #   |> Jason.decode!()
+  #   |> Enum.map(&load_pull_requests/1)
+  #   |> Enum.filter(&(&1.merged_at))
+  #   # base_sha
+  #   # head_sha
+  #   # merge_commit_sha
+  # end
+  #
+  # defp load_pull_requests(%{"number" => number,
+  #                          "body" => body,
+  #                          "merge_commit_sha" => merge_commit_sha,
+  #                          "head_ref" => head_ref,
+  #                          "head_sha" => head_sha,
+  #                          "base_ref" => base_ref,
+  #                          "base_sha" => base_sha,
+  #                          "merged_at" => merged_at}) do
+  #   %{number: number,
+  #    body: body,
+  #    merge_commit_sha: merge_commit_sha,
+  #    head_ref: head_ref,
+  #    head_sha: head_sha,
+  #    base_ref: base_ref,
+  #    base_sha: base_sha,
+  #    merged_at: merged_at}
+  # end
 
   # pull_head_shas |> MapSet.size => 3522
   # pull_merge_shas |> MapSet.size => 3523

@@ -2,8 +2,8 @@ defmodule Gitlog.Router do
   use Plug.Router
   require Logger
 
-  plug :match
-  plug :dispatch
+  plug(:match)
+  plug(:dispatch)
 
   get "/" do
     {:ok, body, conn} = Plug.Conn.read_body(conn)
