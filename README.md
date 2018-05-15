@@ -2,6 +2,19 @@
 
 **TODO: Add description**
 
+#TODO
+1. Make elixir tool useful i.e. give it a cli with the commands
+  - Extract all pull requests (raw dump)
+  - Extract all pull requests (processed)
+2. Figure out how to get ALL commits in the repo
+3. Confirm
+3. Be able to output all the shas of PR messages that can't be matched up
+4. Be able to produce, for any github repo, a check that by following the
+base_url of every PR, one is able to map each PR (or the vast majority of them)
+to the master branch. Basically reproduce what you have in the jupyter notebook
+in elixir.
+6. Speed up pull request pull
+
 ## Description
 This project takes the PR history of a github project and outputs a markdown
 file that describes the PR history of a given branch.
@@ -80,6 +93,7 @@ cli --auth --username --project --url(default) https://github.com/elixir-lang/el
 # back a list that is less than the per_page number.
 curl "https://api.github.com/repos/elixir-lang/elixir/pulls?state=closed&page=1&per_page=100" | jq 'map({number: .number, body: .body, merge_commit_sha: .merge_commit_sha, head_ref: .head.ref, merged_at: .merged_at, head_sha: .head.sha, base_ref: .base.ref, base_sha: .base.sha})' > elixir_merge_data.json
 
+git log --all --format="%H" > ../gitlog/all_shas
 ```
 
 

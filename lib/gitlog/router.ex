@@ -8,7 +8,7 @@ defmodule Gitlog.Router do
   get "/" do
     {:ok, body, conn} = Plug.Conn.read_body(conn)
     IO.puts(body)
-    Logger.info(body)
+    :ok = Logger.info(body)
 
     conn
     |> send_resp(200, "Plug!")
@@ -17,7 +17,7 @@ defmodule Gitlog.Router do
   post "/" do
     {:ok, body, conn} = Plug.Conn.read_body(conn)
     IO.puts(body)
-    Logger.info(body)
+    :ok = Logger.info(body)
 
     conn
     |> send_resp(200, "Plug!")
@@ -26,7 +26,7 @@ defmodule Gitlog.Router do
   match _ do
     {:ok, body, conn} = Plug.Conn.read_body(conn)
     IO.puts(body)
-    Logger.info(body)
+    :ok = Logger.info(body)
 
     send_resp(conn, 404, "Not Found")
   end

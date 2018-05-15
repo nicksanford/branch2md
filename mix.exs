@@ -4,10 +4,17 @@ defmodule Gitlog.MixProject do
   def project do
     [
       app: :gitlog,
+      escript: escript_config(),
       version: "0.1.0",
       elixir: "~> 1.6",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      dialyzer: [ plt_add_deps: :transitive,
+                  plt_add_apps: [:inets],
+                  flags: ["-Wunmatched_returns",
+                          :error_handling,
+                          :race_conditions,
+                          :underspecs] ]
     ]
   end
 
@@ -25,6 +32,13 @@ defmodule Gitlog.MixProject do
       {:cowboy, "~> 1.0"},
       {:plug, "~> 1.0"},
       {:jason, "~> 1.0"},
+      {:dialyxir, "~> 0.5.0", only: [:dev], runtime: false}
+    ]
+  end
+
+  defp escript_config do
+    [
+      main_module: Gitlog.CLI
     ]
   end
 end

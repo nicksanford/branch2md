@@ -30,3 +30,9 @@ use Mix.Config
 #     import_config "#{Mix.env}.exs"
 config :logger,
   truncate: :infinity
+
+config :gitlog,
+  github_api_url: 'https://api.github.com',
+  github_url: "https://github.com",
+  clone_dir: "/tmp",
+  cache_dir: ".cache"
